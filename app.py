@@ -6,6 +6,26 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 import uuid
+from arima import arima_monthly
+
+import streamlit as st
+
+st.set_page_config(
+    page_title="AOPL Forecasting Tool",
+    layout="wide"
+)
+
+# st.markdown("""
+# <style>
+#     header {
+#         visibility: hidden;
+#     }
+
+#     .block-container {
+#         padding-top: 0rem;
+#     }
+# </style>
+# """, unsafe_allow_html=True)
 
 def run_app() -> None:
     st.title("AOPL Forecasting Tool")
@@ -142,7 +162,7 @@ def run_app() -> None:
 
             # Forecasting using Prophet
             with tab31:
-                st.write("""Facebook Prophet is a time series forecasting method designed to handle real-world data with 
+                st.write("""About: Facebook Prophet is a time series forecasting method designed to handle real-world data with 
                      trends, seasonality, and irregular patterns. It separates data into components like overall trend, 
                      repeating seasonal effects, and special events such as holidays. The model is robust to missing values and outliers, 
                      making it practical for many applications. It requires minimal manual tuning and provides interpretable results. 
@@ -167,7 +187,34 @@ def run_app() -> None:
                           ARIMA can model underlying structures in the data and generate reliable predictions. It is especially 
                           useful for non-seasonal time series and is commonly applied in fields such as economics, finance, 
                           and business analytics.""")
+                 forecast_type = st.selectbox("Select Forecast Type",
+                              ["None", "Monthly Forecast", "Daily Forecast"])
+                 forecast_period = st.number_input("Enter forecasting period",
+                                                    min_value=1,
+                                                    max_value=3650,
+                                                    value=1,
+                                                    step=1
+                                                    )
+                 df.set_index('Date', inplace=True)
+                 df.sort_index(inplace=True)
                  
+                 val_col = st.selectbox("Select Value Column for Forecasting", df.columns)
+                 if forecast_type == "Monthly Forecast":
+                      forecast_df, csv = arima_monthly(df=df,
+                                                       val_col=val_col, 
+                                                       forecast_period = forecast_period)
+
+                      st.dataframe(forecast_df) 
+                        # download button
+                      st.download_button(
+                            label="Download Forecast Data",
+                            data=csv,
+                            file_name="forecast.csv",
+                            mime="text/csv"
+                        )
+                      
+                 elif forecast_type == "Daily Forecast":
+                      tys = df.resample("D").sum()
 
 if __name__ == "__main__":
     run_app()
